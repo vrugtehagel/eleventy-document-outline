@@ -1,5 +1,4 @@
 import * as HTMLParser from "npm:node-html-parser@^6.1";
-import { crypto } from "jsr:@std/crypto@^0.224";
 
 /** Allowed header tag names, lowercased */
 const HEADERS: string[] = ["h1", "h2", "h3", "h4", "h5", "h6", "h7"] as const;
