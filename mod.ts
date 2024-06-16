@@ -38,7 +38,7 @@ function normalize(header: string): LowerCaseHeader {
 /** The plugin itself, with an optional options object as second argument. */
 export default function EleventyDocumentOutline(
   config: EleventyConfig,
-  options?: Partial<EleventyDocumentOutlineOptions> = {},
+  options: Partial<EleventyDocumentOutlineOptions> = {},
 ) {
   const normalizedOptions = Object.assign({}, DEFAULTS, options);
   const memory = new Map<UUID, LowerCaseHeader[]>();
