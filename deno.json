@@ -1,5 +1,8 @@
 {
   "name": "@vrugtehagel/eleventy-document-outline",
   "version": "0.0.1",
-  "exports": "./mod.ts"
+  "exports": "./mod.ts",
+  "publish": {
+    "include": ["mod.ts", "README.md"]
+  }
 }
