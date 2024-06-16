@@ -26,23 +26,25 @@ import EleventyDocumentOutline from 'eleventy-document-outline';
 
 export default function(eleventyConfig){
 	// …
-	eleventyConfig.addPlugin(EleventyDocumentOutline);
+	eleventyConfig.addPlugin(EleventyDocumentOutline, {
+		headers: ['h1', 'h2', 'h3'],
+	});
 	// …
 }
 ```
 
-There are additional options one may pass as second argument to the `.addPlugin()` call:
+As shown above, there are additional options one may pass as second argument to the `.addPlugin()` call, as an object. It may have the following keys:
 
-- `headers`: an array of headers to include in the document outline. By default, this is set to `['h1', 'h2', 'h3']`. Note that this can be overwritten on a case-by-case basis in the shortcode itself.
-- `output`: a function receiving a single argument `{ id, text, header }`. The function must return a snippet of HTML to output, by default this is
+- `headers`: an array of headers to include in the document outline. By default, this is set to `['h1', 'h2', 'h3']`. Note that this can be overwritten on a case-by-case basis in the `{% outline %}` shortcode.
+- `output`: a function receiving a single argument `{ id, text, header }`. The function must return a snippet of HTML to output. By default, this is
 
 ```js
 function output({ id, text, header }){
-	return `<a href="#${id}" class="link-${header}">${text}</a>`,
+	return `<a href="#${id}" class="link-${header}">${text}</a>`;
 }
 ```
 
-The function runs once per header found. The `id` then matches the `id` attribute of the given header, the `header` matches the `.localName` (i.e. lowercased `.tagName`) and the `text` is the text found inside the header.
+Which means the options are rendered as sibling anchor tags. The function runs once per header found, in the same order that they are found in the document. The `id` then matches the `id` attribute of the given header, the `header` matches the `.localName` (i.e. lowercased `.tagName`) and the `text` is the text found inside the header.
 
 ## Usage
 
