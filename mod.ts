@@ -56,12 +56,12 @@ export default function EleventyDocumentOutline(
   /** The transform responsible for actually generating and rendering the links */
   config.addTransform(
     "document-outline",
-    async function (this: any, content: string) {
+    function (this: any, content: string) {
       const outputPath = this.page.outputPath as string;
       if (!outputPath.endsWith(".html")) return content;
 
       const included = [...memory].filter(([uuid]) => content.includes(uuid));
-      const necessaryHeaders = included.flatMap(([uuid, headers]) => headers);
+      const necessaryHeaders = included.flatMap(([_uuid, headers]) => headers);
       const uniqueHeaders = [...new Set(necessaryHeaders)];
       const root = HTMLParser.parse(content);
       const selector = uniqueHeaders.join(",");
@@ -81,7 +81,7 @@ export default function EleventyDocumentOutline(
         const normalized = headers.map((header) => normalize(header));
         const output = matches
           .filter(([header]) => normalized.includes(header))
-          .map(([header, output]) => output)
+          .map(([_header, output]) => output)
           .join("");
         result = result.replaceAll(uuid, output);
       }
