@@ -27,7 +27,7 @@ export type EleventyDocumentOutlineOptions = {
    * is an array of objects representing the individual headers in the
    * processed content. Each header has a `.text` property for the original
    * text contents and a `tag` property to identify the header's tag name. */
-  template?: string | { lang: string, source: string };
+  template?: string | { lang: string; source: string };
 
   /** By default, this plugin will ignore headers without an `id` attribute.
    * This is so that the document outline is somewhat of an opt-in system, but
