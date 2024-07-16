@@ -19,6 +19,9 @@ function RenderPluginForEleventyDocumentOutline(config: EleventyConfig) {
   });
 }
 
+/** The main plugin. Add this with `eleventyConfig.addPlugin(…);` Options are
+ * all optional - see the `EleventyDocumentOutlineOptions` type for more
+ * information. */
 export function EleventyDocumentOutline(
   config: EleventyConfig,
   options: EleventyDocumentOutlineOptions = {},
@@ -145,6 +148,10 @@ export function EleventyDocumentOutline(
     return result;
   });
 
+  /** This may not run if the build fails for some reason or another, but it
+   * should be okay since we use the same `tmpDir` on subsequent runs. In other
+   * words, the next successful run will delete the temporary directory
+   * properly. */
   config.events.addListener("eleventy.after", async () => {
     await fs.rm(tmpDir, { recursive: true, force: true });
   });
