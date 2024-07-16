@@ -1,6 +1,7 @@
 # eleventy-document-outline
 
-> [!IMPORTANT] Requires Eleventy 3.0.0-alpha.15 or higher.
+> [!IMPORTANT]
+> Requires Eleventy 3.0.0-alpha.15 or higher.
 
 Creates a list of anchors to linkable headers.
 
