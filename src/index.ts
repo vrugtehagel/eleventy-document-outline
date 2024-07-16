@@ -47,6 +47,7 @@ export function EleventyDocumentOutline(
     },
     mode: defaultMode = "optin",
     slugify = config.getFilter("slugify"),
+    tmpDir = "tmpDirEleventyDocumentOutline",
   } = options;
 
   const memory = new Map<UUID, {
@@ -113,7 +114,7 @@ export function EleventyDocumentOutline(
     };
   });
 
-  let tempDir: string;
+  let tmpDirCreated = false;
 
   /** If we have shortcodes, then we process HTML files, find UUIDs inside them
    * and replace them with the rendered content. If any of them are in
@@ -151,13 +152,12 @@ export function EleventyDocumentOutline(
       const data = { headers };
       if(typeof template != "string"){
         if(!templateFiles.has(template)){
-          if(!tempDir){
-            const uuid = crypto.randomUUID();
-            tempDir = `tmp-${uuid}`;
-            await fs.mkdir(tempDir);
+          if(!tmpDirCreated){
+            await fs.mkdir(tmpDir, { recursive: true });
+            tmpDirCreated = true;
           }
           const fileUUID = crypto.randomUUID();
-          const filePath = `${tempDir}/${fileUUID}.${template.lang}`;
+          const filePath = `${tmpDir}/${fileUUID}.${template.lang}`;
           await fs.writeFile(filePath, template.source);
           templateFiles.set(template, filePath);
         }
@@ -176,6 +176,6 @@ export function EleventyDocumentOutline(
   });
 
   config.events.addListener("eleventy.after", async (event: any) => {
-    await fs.rm(tempDir, { recursive: true, force: true });
+    await fs.rm(tmpDir, { recursive: true, force: true });
   })
 }
