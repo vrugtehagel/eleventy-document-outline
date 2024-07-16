@@ -2,17 +2,11 @@ import fs from "node:fs/promises";
 import { RenderPlugin } from "npm:@11ty/eleventy@^3.0.0-alpha.15";
 import * as HTMLParser from "npm:node-html-parser@^6.1";
 import type { EleventyDocumentOutlineOptions } from "./options.ts";
+import { findHeaders } from "./find-headers.ts";
+import { renderTemplate } from "./render-template.ts";
 
 /** The Eleventy config object, should be a better type than "any" but alas */
 type EleventyConfig = any;
-
-/** The shape of an Eleventy `page` object. */
-type EleventyPage = any;
-
-/** Unique UUIDs are generated for each use of an outline. We first output
- * UUIDs, and once the whole page is rendering, we can process headers and
- * replace the UUIDs with content. */
-type UUID = string;
 
 /** We wrap the RenderPlugin with our own function, so Eleventy sees it as a
  * different plugin. We also rename the shortcodes so that users are not
@@ -50,19 +44,17 @@ export function EleventyDocumentOutline(
     tmpDir = "tmpDirEleventyDocumentOutline",
   } = options;
 
-  const memory = new Map<UUID, {
-    page: EleventyPage;
+  const memory = new Map<string, {
+    page: any;
     selector: string;
     template: string | { lang: string; source: string };
     mode: "optin" | "dynamic";
   }>();
 
-  const templateFiles = new Map<{ lang: string; source: string }, string>();
-
   /** Support syntax like:
    * {% outline "h2,h3", "templates/foo.liquid" %} */
   config.addShortcode("outline", function (
-    this: { page: EleventyPage },
+    this: any,
     selector: string = defaultSelector,
     template: false | string | { lang: string; source: string } = false,
     mode: "optin" | "dynamic" = defaultMode,
@@ -86,7 +78,7 @@ export function EleventyDocumentOutline(
    * …
    * {% for header in outline.headers %}…{% endfor %}
    */
-  config.addFilter("outline", function (
+  config.addFilter("outline_parse", function (
     content: string,
     selector: string = defaultSelector,
     mode: "optin" | "dynamic" = defaultMode,
@@ -95,33 +87,34 @@ export function EleventyDocumentOutline(
     headers: Array<{ id: string; text: string; tag: string }>;
   } {
     const root = HTMLParser.parse(content);
-    const rawHeaders = [...root.querySelectorAll(selector)];
-    const headers = [];
-    let createdId = false;
-    for (const rawHeader of rawHeaders) {
-      if (!rawHeader.getAttribute("id")) {
-        if (mode != "dynamic") continue;
-        createdId = true;
-      }
-      const text: string = rawHeader.rawText;
-      const id: string = rawHeader.getAttribute("id") || slugify(text);
-      const tag: string = rawHeader.tagName.toLowerCase();
-      headers.push({ id, text, tag });
-    }
+    const {
+      headers,
+      markupChanged,
+    } = findHeaders(root, selector, mode, slugify);
     return {
-      content: createdId ? root.toString() : content,
+      content: markupChanged ? root.toString() : content,
       headers,
     };
   });
 
-  let tmpDirCreated = false;
+  config.addFilter("outline", async function (
+    this: any,
+    content: string,
+    selector: string = defaultSelector,
+    template: string | { lang: string; source: string } = defaultTemplate,
+  ): Promise<string> {
+    const root = HTMLParser.parse(content);
+    const { headers } = findHeaders(root, selector, "optin", slugify);
+    const data = { headers };
+    return await renderTemplate.call(this, config, template, tmpDir, data);
+  });
 
   /** If we have shortcodes, then we process HTML files, find UUIDs inside them
    * and replace them with the rendered content. If any of them are in
    * `"dynamic`" mode, then we also add IDs to the headers. For example:
    * {% outline "h2,h3", "template/foo.liquid", "dynamic" %} */
   config.addTransform("document-outline", async function (
-    this: { page: EleventyPage },
+    this: any,
     content: string,
   ): Promise<string> {
     const outputPath = this.page.outputPath as string;
@@ -130,44 +123,21 @@ export function EleventyDocumentOutline(
       return content;
     }
     const root = HTMLParser.parse(content);
-    const renderFile = config.getShortcode("eleventyDocumentOutlineRender");
-    const replacements = new Map<UUID, string>();
+    const replacements = new Map<string, string>();
     let alteredParsedHTML = false;
-    for (const [uuid, context] of memory) {
-      if (!content.includes(uuid)) continue;
+    await Promise.all([...memory].map(async ([uuid, context]) => {
+      if (!content.includes(uuid)) return;
       const { selector, mode, template } = context;
-      const rawHeaders = [...root.querySelectorAll(selector)];
-      const headers = [];
-      for (const rawHeader of rawHeaders) {
-        if (!rawHeader.getAttribute("id") && mode != "dynamic") continue;
-        const text: string = rawHeader.rawText;
-        if (!rawHeader.getAttribute("id")) {
-          rawHeader.setAttribute("id", slugify(text));
-          alteredParsedHTML = true;
-        }
-        const id: string = rawHeader.getAttribute("id") ?? "";
-        const tag: string = rawHeader.tagName.toLowerCase();
-        headers.push({ text, id, tag });
-      }
+      const {
+        headers,
+        markupChanged,
+      } = findHeaders(root, selector, mode, slugify);
       const data = { headers };
-      if (typeof template != "string") {
-        if (!templateFiles.has(template)) {
-          if (!tmpDirCreated) {
-            await fs.mkdir(tmpDir, { recursive: true });
-            tmpDirCreated = true;
-          }
-          const fileUUID = crypto.randomUUID();
-          const filePath = `${tmpDir}/${fileUUID}.${template.lang}`;
-          await fs.writeFile(filePath, template.source);
-          templateFiles.set(template, filePath);
-        }
-      }
-      const path = typeof template == "string"
-        ? template
-        : templateFiles.get(template);
-      const rendered = await renderFile.call(this, path, data);
+      alteredParsedHTML ||= markupChanged;
+      const rendered = await renderTemplate
+        .call(this, config, template, tmpDir, data);
       replacements.set(uuid, rendered);
-    }
+    }));
     let result = alteredParsedHTML ? root.toString() : content;
     for (const [uuid, replacement] of replacements) {
       result = result.replace(uuid, replacement);
@@ -175,7 +145,7 @@ export function EleventyDocumentOutline(
     return result;
   });
 
-  config.events.addListener("eleventy.after", async (event: any) => {
+  config.events.addListener("eleventy.after", async () => {
     await fs.rm(tmpDir, { recursive: true, force: true });
   });
 }
