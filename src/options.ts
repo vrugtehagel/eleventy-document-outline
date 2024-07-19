@@ -42,11 +42,4 @@ export type EleventyDocumentOutlineOptions = {
    * overwritten with a function here. This option is _not_ available on a
    * case-by-case basis. */
   slugify?: (input: string) => string;
-
-  /** When using the shortcode combined with a template that is not referencing
-   * a file (which includes the default configuration) a temporary directory is
-   * needed to write document outline templates to in order for them to be
-   * processed by Eleventy. By default, `"tmpDirEleventyDocumentOutline"` is
-   * used, but it is possible to overwrite this using this option. */
-  tmpDir?: string;
 };

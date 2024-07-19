@@ -1,5 +1,3 @@
-import fs from "node:fs/promises";
-import { RenderPlugin } from "npm:@11ty/eleventy@^3.0.0-alpha.15";
 import * as HTMLParser from "npm:node-html-parser@^6.1";
 import type { EleventyDocumentOutlineOptions } from "./options.ts";
 import { findHeaders } from "./find-headers.ts";
@@ -8,17 +6,6 @@ import { renderTemplate } from "./render-template.ts";
 /** The Eleventy config object, should be a better type than "any" but alas */
 type EleventyConfig = any;
 
-/** We wrap the RenderPlugin with our own function, so Eleventy sees it as a
- * different plugin. We also rename the shortcodes so that users are not
- * bothered by the addition of the plugin under the hood. */
-function RenderPluginForEleventyDocumentOutline(config: EleventyConfig) {
-  return RenderPlugin(config, {
-    tagName: null,
-    tagNameFile: "eleventyDocumentOutlineRender",
-    accessGlobalData: true,
-  });
-}
-
 /** The main plugin. Add this with `eleventyConfig.addPlugin(…);` Options are
  * all optional - see the `EleventyDocumentOutlineOptions` type for more
  * information. */
@@ -26,9 +13,7 @@ export function EleventyDocumentOutline(
   config: EleventyConfig,
   options: EleventyDocumentOutlineOptions = {},
 ) {
-  /** We need this for the shortcode. If it already exists, then adding it
-   * again is fine and does nothing. */
-  config.addPlugin(RenderPluginForEleventyDocumentOutline);
+  config.versionCheck(">=3.0.0-alpha.15");
 
   const {
     headers: defaultSelector = "h1,h2,h3",
@@ -44,7 +29,6 @@ export function EleventyDocumentOutline(
     },
     mode: defaultMode = "optin",
     slugify = config.getFilter("slugify"),
-    tmpDir = "tmpDirEleventyDocumentOutline",
   } = options;
 
   const memory = new Map<string, {
@@ -108,8 +92,9 @@ export function EleventyDocumentOutline(
   ): Promise<string> {
     const root = HTMLParser.parse(content);
     const { headers } = findHeaders(root, selector, "optin", slugify);
-    const data = { headers };
-    return await renderTemplate.call(this, config, template, tmpDir, data);
+    const { page, eleventy } = this;
+    const data = { headers, page, eleventy };
+    return await renderTemplate(template, data);
   });
 
   /** If we have shortcodes, then we process HTML files, find UUIDs inside them
@@ -135,10 +120,10 @@ export function EleventyDocumentOutline(
         headers,
         markupChanged,
       } = findHeaders(root, selector, mode, slugify);
-      const data = { headers };
+      const { page, eleventy } = this;
+      const data = { headers, page, eleventy };
       alteredParsedHTML ||= markupChanged;
-      const rendered = await renderTemplate
-        .call(this, config, template, tmpDir, data);
+      const rendered = await renderTemplate(template, data);
       replacements.set(uuid, rendered);
     }));
     let result = alteredParsedHTML ? root.toString() : content;
@@ -146,13 +131,5 @@ export function EleventyDocumentOutline(
       result = result.replace(uuid, replacement);
     }
     return result;
-  });
-
-  /** This may not run if the build fails for some reason or another, but it
-   * should be okay since we use the same `tmpDir` on subsequent runs. In other
-   * words, the next successful run will delete the temporary directory
-   * properly. */
-  config.events.addListener("eleventy.after", async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
   });
 }
