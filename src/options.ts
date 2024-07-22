@@ -1,7 +1,7 @@
 /** An options object. Every option is optional. They represent the defaults,
  * and can be overwritten on a case-by-case basis. */
 export type EleventyDocumentOutlineOptions = {
-  /** A selector to identify headers with. It defaults to "h1,h2,h3".
+  /** A selector to identify headers with. It defaults to `"h1,h2,h3"`.
    * Theoretically it is possible to select elements that are not headers,
    * but this is not recommended. */
   headers?: string;
