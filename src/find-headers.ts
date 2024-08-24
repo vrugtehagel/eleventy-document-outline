@@ -15,7 +15,7 @@ export function findHeaders(
       if (mode != "dynamic") continue;
       markupChanged = true;
     }
-    const text: string = rawHeader.rawText;
+    const text: string = rawHeader.text;
     const id: string = rawHeader.getAttribute("id") || slugify(text);
     const tag: string = rawHeader.tagName.toLowerCase();
     headers.push({ id, text, tag });
