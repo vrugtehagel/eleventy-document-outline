@@ -37,6 +37,7 @@ export function EleventyDocumentOutline(
     template: string | { lang: string; source: string };
     mode: "optin" | "dynamic";
   }>();
+  config.on("eleventy.before", () => memory.clear());
 
   /** Support syntax like:
    * {% outline "h2,h3", "templates/foo.liquid" %} */
