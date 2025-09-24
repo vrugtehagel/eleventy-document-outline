@@ -107,7 +107,7 @@ export function EleventyDocumentOutline(
     content: string,
   ): Promise<string> {
     const outputPath = this.page.outputPath as string;
-    if (!outputPath.endsWith(".html")) return content;
+    if (!outputPath || !outputPath.endsWith(".html")) return content;
     if (![...memory].some(([uuid]) => content.includes(uuid))) {
       return content;
     }
