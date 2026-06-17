@@ -1,4 +1,4 @@
-import * as HTMLParser from "npm:node-html-parser@^6.1";
+import * as HTMLParser from "node-html-parser";
 import type { EleventyDocumentOutlineOptions } from "./options.ts";
 import { findHeaders } from "./find-headers.ts";
 import { renderTemplate } from "./render-template.ts";

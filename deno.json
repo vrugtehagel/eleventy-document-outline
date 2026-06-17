@@ -2,6 +2,10 @@
   "name": "@vrugtehagel/eleventy-document-outline",
   "version": "0.1.10",
   "exports": "./mod.ts",
+  "imports": {
+    "@11ty/eleventy": "npm:@11ty/eleventy@^3.1.6",
+    "node-html-parser": "npm:node-html-parser@^6.1"
+  },
   "publish": {
     "include": ["src/**", "mod.ts", "README.md"]
   },

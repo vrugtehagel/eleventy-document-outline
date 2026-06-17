@@ -1,4 +1,4 @@
-import { RenderPlugin } from "npm:@11ty/eleventy@^3.0.0-alpha.15";
+import { RenderPlugin } from "@11ty/eleventy";
 
 const cache = new Map<string, Promise<(data: any) => string>>();
 
