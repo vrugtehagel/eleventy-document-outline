@@ -3,7 +3,7 @@
   "version": "0.1.11",
   "exports": "./mod.ts",
   "imports": {
-    "@11ty/eleventy": "npm:@11ty/eleventy@^3.1.6",
+    "@11ty/eleventy": "npm:@11ty/eleventy@^4.0.0-alpha.8",
     "node-html-parser": "npm:node-html-parser@^6.1"
   },
   "publish": {
